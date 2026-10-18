@@ -14,7 +14,7 @@ function validRoom(s){ return typeof s==='string' && /^[a-zA-Z0-9_-]{1,48}$/.tes
 function cleanData(d){
   if(!d || typeof d!=='object') return null;
   const n=(x)=>Number.isFinite(Number(x))?Number(x):0;
-  return {seq:n(d.seq),t:n(d.t),ok:!!d.ok,countsOk:!!d.countsOk,status:String(d.status||'unknown').slice(0,24),name:String(d.name||'ANF Player').slice(0,24),acc:n(d.acc),perfect:n(d.perfect),early:n(d.early),late:n(d.late),miss:n(d.miss),overload:n(d.overload),keys:Array.isArray(d.keys)?d.keys.filter(k=>typeof k==='string'&&k.length<=24).slice(0,16):[],keyConfig:Array.isArray(d.keyConfig)?d.keyConfig.filter(k=>typeof k==='string'&&k.length<=24).slice(0,16):[],receivedAt:Date.now()};
+  return {seq:n(d.seq),t:n(d.t),ok:!!d.ok,countsOk:!!d.countsOk,status:String(d.status||'unknown').slice(0,24),name:String(d.name||'ANF Player').slice(0,24),avatarUrl:typeof d.avatarUrl==='string' && /^https?:\/\//i.test(d.avatarUrl) ? d.avatarUrl.slice(0,1000) : '',acc:n(d.acc),perfect:n(d.perfect),early:n(d.early),late:n(d.late),miss:n(d.miss),overload:n(d.overload),keys:Array.isArray(d.keys)?d.keys.filter(k=>typeof k==='string'&&k.length<=24).slice(0,16):[],keyConfig:Array.isArray(d.keyConfig)?d.keyConfig.filter(k=>typeof k==='string'&&k.length<=24).slice(0,16):[],receivedAt:Date.now()};
 }
 function handler(req,res){
   if(req.method==='OPTIONS'){res.writeHead(204,{'Access-Control-Allow-Origin':'*','Access-Control-Allow-Methods':'GET,POST,OPTIONS','Access-Control-Allow-Headers':'Content-Type,X-ANF-Token'});return res.end();}
