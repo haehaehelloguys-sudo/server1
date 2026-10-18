@@ -47,3 +47,4 @@ if(require.main===module){
  http.createServer(handler).listen(PORT,'0.0.0.0',()=>console.log(`ANFOverlay relay listening on 0.0.0.0:${PORT}`));
 }
 module.exports={handler,cleanData,validRoom};
+
