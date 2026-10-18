@@ -12,11 +12,15 @@ const q=new URLSearchParams(location.search),room=q.get('room')||'anf-test',play
 document.getElementById('card'+(player==='A'?'B':'A')).remove();
 document.getElementById('board').style.cssText='display:flex;width:520px;gap:0;background:transparent';
 const defaults=['LCTRL','L⇧','1','2','3','4','5','V','-','END','HOME','=','←','↑','↓'];
+let lastEventId=0,eventCursorInitialized=false;const eventQueue=[];let eventBusy=false;
+function paintEvent(ev){const row=$('keys'+player);const target=Array.from(row.children).find(el=>el.title===ev.key);if(!target)return;if(ev.down){target.classList.remove('active');void target.offsetWidth;target.classList.add('active');}else target.classList.remove('active');}
+function drainEvents(){if(eventBusy||!eventQueue.length)return;eventBusy=true;paintEvent(eventQueue.shift());setTimeout(()=>{eventBusy=false;drainEvents();},16);}
+async function pullEvents(){try{const r=await fetch(base+'/api/events?room='+encodeURIComponent(room)+'&player='+player+'&after='+lastEventId,{cache:'no-store'});const d=await r.json();if(!eventCursorInitialized){lastEventId=Number(d.latestEventId)||0;eventCursorInitialized=true;return;}if(d.reset){lastEventId=Math.max(0,(d.oldestEventId||1)-1);}if(Array.isArray(d.events)){d.events.forEach(ev=>{if(Number(ev.eid)>lastEventId){lastEventId=Number(ev.eid);eventQueue.push(ev);}});drainEvents();}}catch(e){} }
 function render(slot,p){const s=slot.toUpperCase(),card=$('card'+s);card.classList.toggle('stale',!p||p.stale||!p.ok);if(!p){$('name'+s).textContent='PLAYER '+s;return;}
  $('name'+s).textContent=p.name||'PLAYER '+s;$('acc'+s).textContent=p.ok?Number(p.acc).toFixed(3)+'%':'--.---%';const av=$('avatar'+s);if(av){const url=typeof p.avatarUrl==='string'&&/^https?:\/\//i.test(p.avatarUrl)?p.avatarUrl:'';if(av.src!==url)av.src=url;av.style.display=url?'block':'none';}
  const rc=Array.isArray(p.rawCounts)?p.rawCounts:[];const val=i=>Number(rc[i]||0);['v0','v1','v2','v3','v4','v5','v6'].forEach((id,i)=>$(''+id+s).textContent=val([0,1,2,3,4,5,6][i]).toLocaleString());$('v7'+s).textContent='M'+(val(8)+val(10))+' O'+val(9);
  const cfg=Array.isArray(p.keyConfig)&&p.keyConfig.length?p.keyConfig.slice(0,16):defaults;const pressed=new Set(Array.isArray(p.keys)?p.keys:[]);const row=$('keys'+s);row.replaceChildren();cfg.forEach(k=>{const el=document.createElement('span');el.className='key'+(pressed.has(k)?' active':'');el.textContent=String(k).replace('LeftControl','LCTRL').replace('RightControl','RCTRL').replace('LeftShift','L⇧').replace('RightShift','R⇧').replace('LeftArrow','←').replace('RightArrow','→').replace('UpArrow','↑').replace('DownArrow','↓').replace('Alpha','');el.title=k;row.appendChild(el)});
  const holds=$('holds'+s).children;for(let i=0;i<holds.length;i++)holds[i].classList.remove('on');
 }
-async function tick(){try{const r=await fetch(base+'/api/state?room='+encodeURIComponent(room),{cache:'no-store'});const d=await r.json();render(player,d.players&&d.players[player]);}catch(e){}setTimeout(tick,50)}tick();
+async function tick(){try{const r=await fetch(base+'/api/state?room='+encodeURIComponent(room),{cache:'no-store'});const d=await r.json();render(player,d.players&&d.players[player]);}catch(e){}await pullEvents();setTimeout(tick,50)}tick();
 </script></body></html>
